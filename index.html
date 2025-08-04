@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Violence against queer people in Germany</title>
+
+    <style>
+      body {
+        font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      h1 {
+        padding: 1em;
+        text-align: center;
+        color: #941659;
+      }
+
+      #scroll-content {
+        display: flex;
+        flex-direction: row;
+        max-width: 1000px;
+        margin: auto;
+        color: white;
+      }
+
+      #my-svg-chart {
+        position: sticky;
+        top: 20px;
+        width: 60%;
+        padding: 1em;
+        background: #941659;
+      }
+
+      #text {
+        width: 40%;
+        padding: 1em;
+        color:white;
+      }
+
+      .step {
+        margin: 0 0 60vh 0;
+        padding: 2em;
+        background: #941659;
+        font-size: 1.2em;
+      }
+
+      .is-active {
+        background: #941659;
+      }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+
+    <script>
+      d3.csv("violence.csv").then(data => {
+        const svgWidth = 640, svgHeight = 400;
+        const barHeight = 40;
+
+        const maxValue = d3.max(data, d => +d.value2024);
+
+        const xScale = d3.scaleLinear()
+          .domain([0, maxValue])
+          .range([0, svgWidth - 150]);
+
+        const svg = d3
+          .select("#my-svg-chart")
+          .append("svg")
+          .attr("width", svgWidth)
+          .attr("height", svgHeight);
+
+        const bars = svg.selectAll("rect")
+          .data(data)
+          .join("rect")
+          .attr("x", 100)
+          .attr("y", (d, i) => i * (barHeight + 10))
+          .attr("height", barHeight)
+          .attr("fill", "hotpink")
+          .attr("width", 0);
+
+        const labels = svg.selectAll("text.label")
+          .data(data)
+          .join("text")
+          .attr("class", "label")
+          .attr("x", 0)
+          .attr("y", (d, i) => i * (barHeight + 10) + barHeight / 2 + 5)
+          .text(d => d.category)
+          .attr("fill", "white");
+
+        const values = svg.selectAll("text.value")
+          .data(data)
+          .join("text")
+          .attr("class", "value")
+          .attr("x", d => 100 + 5)
+          .attr("y", (d, i) => i * (barHeight + 10) + barHeight / 2 + 5)
+          .attr("fill", "white")
+          .attr("font-size", "12px")
+          .text("");
+
+        function show2021() {
+          bars
+            .transition()
+            .duration(500)
+            .attr("width", d => xScale(+d.value2021));
+
+          values
+            .transition()
+            .duration(500)
+            .attr("x", d => 100 + xScale(+d.value2021) - 40)
+            .text(d => d.value2021);
+
+          d3.select("#my-svg-chart p").text("2021");
+        }
+
+        function show2024() {
+          bars
+            .transition()
+            .duration(500)
+            .attr("width", d => xScale(+d.value2024));
+
+          values
+            .transition()
+            .duration(500)
+            .attr("x", d => 100 + xScale(+d.value2024) - 40)
+            .text(d => d.value2024);
+
+          d3.select("#my-svg-chart p").text("2024");
+        }
+
+        // === Scrollama Setup ===
+        const scrolly = d3.select("#scroll-content");
+        const figure = scrolly.select("#my-svg-chart");
+        const step = scrolly.selectAll(".step");
+        const scroller = scrollama();
+
+        function handleResize() {
+          const stepH = Math.floor(window.innerHeight * 0.75);
+          step.style("height", stepH + "px");
+
+          const figureHeight = 400;
+          const figureMarginTop = (window.innerHeight - figureHeight) / 2;
+
+          figure
+            .style("height", figureHeight + "px")
+            .style("top", figureMarginTop + "px");
+
+          scroller.resize();
+        }
+
+        function handleStepEnter(response) {
+          step.classed("is-active", (d, i) => i === response.index);
+
+          if (response.index === 0) {
+            show2021();
+          } else if (response.index === 1) {
+            show2024();
+          }
+        }
+
+        function init() {
+          handleResize();
+          scroller
+            .setup({
+              step: "#scroll-content .step",
+              offset: 0.33,
+              debug: false
+            })
+            .onStepEnter(handleStepEnter);
+
+          window.addEventListener("resize", handleResize);
+        }
+
+        init();
+      });
+    </script>
+  </head>
+
+  <body>
+    <h1>Violence against people based on their sexual orientation in Germany</h1>
+
+    <div id="scroll-content">
+      <div id="my-svg-chart">
+        <p>Violence against people based on their sexual orientation in Germany</p>
+      </div>
+
+      <div id="text">
+        <div class="step">In 2021, the German Federal Office of Criminal Investigation counted 870 crimes against people based on their sexual orientation, among that 310 insults and 164 acts of violence. </div>
+        <div class="step">These numbers have grown considerably in 2024, up to 447 insults and 253 acts of violence. In total, 1765 crimes were reported - more than double the amount than three years ago.</div>
+      </div>
+    </div>
+  </body>
+</html>
